@@ -1,0 +1,91 @@
+---
+title: "Analysis on the Happiness across the countries"
+output: html_document
+---
+```{r}
+#import libraries
+library(devtools)
+library(stringr)
+```
+```{r}
+setwd("C:/Users/Federico Bersani/PycharmProjects/R-projects/PCA_applications")
+Happiness <- read.table("Happyness.txt", header=TRUE)
+head(Happiness)
+```
+
+
+```{r}
+#create dimensions with categorical values
+Country_Name <- Happiness$Country
+Country_Region <- Happiness$Region
+Country_Continent <- Happiness$Continent
+```
+```{r}
+#create dataset with only numeric avlues
+happiness <- Happiness[,4:10]
+head(happiness)
+```
+```{r}
+#plot te distribution of the different numeric fields
+par(mfrow=c(1,1))
+boxplot(happiness,col='yellow')
+#variability and ranges are quite different --> scale values
+```
+```{r}
+#scale the dataset and compute the Principa Components
+happiness.sd <- scale(happiness)
+happiness.sd <- data.frame(happiness.sd)
+
+pc.happiness <- princomp(happiness.sd, scores=T)
+summary(pc.happiness)
+```
+```{r}
+#Look at te variance explained by the Variables
+layout(matrix(c(2,3,1,3),2,byrow=T))
+
+barplot(pc.happiness$sdev^2, las=2, main='Principal Components', ylim=c(0,4), ylab='Variances')
+abline(h=1, col='blue')
+barplot(sapply(happiness.sd,sd)^2, las=2, main='Original Variables', ylim=c(0,4), ylab='Variances')
+plot(cumsum(pc.happiness$sdev^2)/sum(pc.happiness$sde^2), type='b', axes=F, xlab='number of components',
+     ylab='contribution to the total variance', ylim=c(0,1))
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(happiness.sd),labels=1:ncol(happiness.sd),las=2)
+```
+```{r}
+#Look at the scores of the variables for each PC
+# variability of the original variables / scores
+layout(matrix(c(1,2),2))
+boxplot(happiness.sd, las=2, col='gold', main='Original variables')
+scores.happiness <- pc.happiness$scores
+scores.happiness <- data.frame(scores.happiness)
+boxplot(scores.happiness, las=2, col='gold', main='Principal components')
+```
+```{r}
+load.happiness <- pc.happiness$loadings
+
+par(mar = c(1,4,0,2), mfrow = c(3,1))
+for(i in 1:3)barplot(load.happiness[,i], ylim = c(-1, 1))
+
+#here I flop only variables whose loading is above 0.3 (significant variables)
+par(mar = c(1,4,0,2), mfrow = c(3,1))
+for(i in 1:3) barplot(ifelse(abs(load.happiness[,i]) < 0.3, 0, load.happiness[,i]) , ylim = c(-1, 1));abline(h=0)
+
+```
+#Considerations after plotting the loadings
+```{r}
+# The first PC is strongly related to traditional wealth indicators such as GDP, life expectancy and Social Support.
+# The Second PC is dealing more with the perceived 'moral' aspects of countries behavior and lifestyle. Indeed, high values on the second PC are linked with higher perception of corruption, while lower values on the second PC represent high  generosity and high freedom on life choices.
+# The third PC is totally devoted to the Residuals, so it makes no sense to deeper the analysis in that direction.
+
+```
+```{r}
+biplot(pc.happiness)
+```
+```{r}
+rownames(happiness.sd) <- Country_Name
+hap_pca <- prcomp(happiness.sd)
+
+Country_Continent <- as.factor(Country_Continent)
+
+biplot(hap_pca)
+```
