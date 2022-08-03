@@ -1,0 +1,54 @@
+---
+title: "R Notebook"
+output: html_document
+---
+
+The [R plugin](https://www.jetbrains.com/help/pycharm/r-plugin-support.html) for IntelliJ-based IDEs provides
+handy capabilities to work with the [R Markdown](https://www.jetbrains.com/help/pycharm/r-markdown.html) files.
+To [add](https://www.jetbrains.com/help/pycharm/r-markdown.html#add-code-chunk) a new R chunk,
+```{r}
+runrec <- read.table('record_mod.txt', header=T)
+n <- dim(runrec)[1]
+p <- dim(runrec)[2]
+runrec
+```
+```{r}
+# we make the units of measure homogeneous across the variables -> transform all measures in seconds
+runrec[,4:7] <- runrec[,4:7]*60
+runrec
+```
+
+Type any R code in the chunk, for example:
+```{r}
+# Let's plot the distribution of teh records based on the category
+boxplot(runrec)
+#lloking at the graph we see that the variability increases with the increase in distance of the competition. In particular is extrimely well visible how variability of Marathon is much higher compared to all the others
+```
+```{r}
+#Plot the same boxplot as before but with the log to reduce variability of categories and see the new distributions
+boxplot(log(runrec)) #done by me
+```
+```{r}
+#PCA
+pc.runrec <- princomp(runrec, scores=T)
+summary(pc.runrec)
+#The first Component is explaining all the variability (no good)
+```
+```{r}
+#Let's plot the loadings of the first 7 principal components
+load.rec <- pc.runrec$loadings
+par(mar = c(1,4,0,2), mfrow = c(7,1))
+for(i in 1:7) barplot(load.rec[,i], ylim = c(-1, 1))
+```
+```{r}
+layout(matrix(c(2,3,1,3),2,byrow=T))
+# by plotting the output of the princomp command you directly plot the variance explained
+plot(pc.runrec, main='Principal components', ylim=c(0,3.5e6))
+barplot(sapply(runrec,sd)^2, main='Original Variables', ylim=c(0,3.5e6), ylab='Variances')
+plot(cumsum(pc.runrec$sd^2)/sum(pc.runrec$sd^2), type='b', axes=F, xlab='number of components',
+     ylab='contribution to the total variance', ylim=c(0,1))
+abline(h=1, col='blue')
+abline(h=0.8, lty=2, col='blue')
+axis(2,at=0:10/10,labels=0:10/10)
+axis(1,at=1:ncol(runrec),labels=1:ncol(runrec),las=2)
+```
